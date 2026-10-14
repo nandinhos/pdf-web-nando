@@ -1,0 +1,26 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: pdf-web-backend
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE_MB:500}MB
+      max-request-size: ${MAX_FILE_SIZE_MB:500}MB
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info
+
+pdfweb:
+  storage:
+    # Fase 0: storage local em disco (TTL simplificado). MinIO/S3 entra nas fases seguintes.
+    local-dir: ${STORAGE_LOCAL_DIR:/tmp/pdfweb}
+  limits:
+    max-pages-per-op: ${MAX_PAGES_PER_OP:2000}

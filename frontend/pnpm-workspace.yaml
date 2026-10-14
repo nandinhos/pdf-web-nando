@@ -1,0 +1,12 @@
+# Marca a raiz do workspace pnpm e ajusta o comportamento do pnpm 11.
+# - verifyDepsBeforeRun: false → não roda 'install' automático antes de cada
+#   script (esse auto-install disparava ERR_PNPM_IGNORED_BUILDS exit 1 no host).
+# O gate strictDepBuilds em instalações explícitas é desligado via env
+# PNPM_CONFIG_STRICT_DEP_BUILDS=false (Dockerfile e CI). Nenhum pacote precisa
+# de build nativo: 'canvas' (opcional do pdfjs-dist p/ Node) não é usado no browser.
+packages: []
+allowBuilds:
+  canvas: set this to true or false
+  esbuild: set this to true or false
+  unrs-resolver: set this to true or false
+verifyDepsBeforeRun: false

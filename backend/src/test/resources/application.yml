@@ -1,0 +1,5 @@
+pdfweb:
+  storage:
+    local-dir: ${java.io.tmpdir}/pdfweb-test
+  limits:
+    max-pages-per-op: 2000

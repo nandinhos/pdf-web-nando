@@ -1,0 +1,26 @@
+# Backend (Java/Maven)
+backend/target/
+*.class
+*.jar
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend (Node/Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.local
+*.local
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# Docker volumes (local)
+infra/.data/
