@@ -122,3 +122,13 @@
   preset "Alta" (sem recompressão agressiva) e GRAY no OCR.
 - **R-Q2:** nome de arquivo do usuário → sanitizar contra header injection e traversal.
 - **R-F1:** render de página grande no modal consome memória — limitar zoom máx.
+
+## 8. Ajuste pós-entrega — renomeação "Editar" → "Ordenar" (D16)
+
+O card antes rotulado "Editar" realiza **ordenação/manuseio de posição de página**
+(reordenar, girar, excluir, duplicar) — não edita o conteúdo. Renomeado para
+**"Ordenar"** (EN: "Arrange") para refletir a função real. Mudança apenas de rótulo
+i18n (`tab.edit`/`tool.edit.desc`); o `ToolId "edit"` e os componentes permanecem.
+
+**Futuro (backlog):** um "Editar" de verdade — edição de texto/elementos do conteúdo
+do PDF — será uma ferramenta separada (ex.: `ToolId "edit-content"`), fora do escopo atual.

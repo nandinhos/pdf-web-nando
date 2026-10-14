@@ -41,7 +41,7 @@ export function EditPanel({ fileId, pages }: { fileId: string; pages: GP[] }) {
       {busy && <Spinner overlay label={t("common.processing")} />}
       <fieldset>
         <legend>{t("tab.edit")}</legend>
-        <p className="hint">Aplica a ordem e as rotações do grid (não edita texto).</p>
+        <p className="hint">Aplica a ordem e as rotações do grid (não edita conteúdo).</p>
 
         <FilenameField value={filename} onChange={setFilename} placeholder="documento-editado" />
 
