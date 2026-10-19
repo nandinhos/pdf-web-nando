@@ -442,3 +442,29 @@ export async function verifySignature(fileId: string): Promise<SignatureReport> 
   if (!res.ok) return parseError(res);
   return res.json();
 }
+
+// ----- Compressão de PDF -----
+
+export interface CompressRequest {
+  fileId: string;
+  quality?: "low" | "medium" | "high";
+  password?: string;
+}
+
+export interface CompressResponse {
+  resultId: string;
+  downloadUrl: string;
+  originalSize: number;
+  compressedSize: number;
+  savingsPercent: number;
+}
+
+export async function compressFile(req: CompressRequest): Promise<CompressResponse> {
+  const res = await fetch(`${API_BASE}/compress`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) return parseError(res);
+  return res.json();
+}

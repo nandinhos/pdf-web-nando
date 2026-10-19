@@ -132,10 +132,30 @@ docker run --rm -v "$PWD/backend":/app -w /app maven:3.9-eclipse-temurin-21 mvn 
 
 # Frontend
 cd frontend && pnpm test
+pnpm run typecheck
 ```
 
 > O teste de OCR real faz *skip* se o binário `tesseract` não estiver presente no
 > ambiente de teste (é validado no container, onde o Tesseract está instalado).
+
+## Esteira Canônica de Rebuild dos Containers
+
+Sempre que novas alterações forem aplicadas no código (backend ou frontend), execute a esteira canônica para rebuild e ativação imediata dos containers locais:
+
+```bash
+# 1. Executar testes canônicos pré-build
+docker run --rm -v "$PWD/backend":/app -w /app maven:3.9-eclipse-temurin-21 mvn test
+cd frontend && pnpm test && pnpm run typecheck && cd ..
+
+# 2. Reconstruir e reiniciar os containers atualizados
+docker compose -f infra/docker-compose.yml up -d --build backend frontend nginx
+
+# 3. Validar a integridade pós-deploy
+curl -s http://localhost:8090/api/v1/actuator/health
+curl -sI http://localhost:8090/
+```
+
+Consulte [docs/ESTEIRA_DE_REBUILD.md](file:///home/gacpac/projects/pdf-web-nando/docs/ESTEIRA_DE_REBUILD.md) para detalhes completos do ciclo de feedback e solução de problemas.
 
 ## Licenciamento
 

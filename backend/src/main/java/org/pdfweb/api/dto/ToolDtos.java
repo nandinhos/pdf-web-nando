@@ -102,4 +102,12 @@ public final class ToolDtos {
     public record JobStatusResponse(String jobId, String status, int progress, int totalPages,
                                     String resultUrl, String textUrl, String error) {
     }
+
+    // ----- Compressão de PDF -----
+    public record CompressRequest(String fileId, String quality, String password) {
+    }
+
+    public record CompressResponse(String resultId, String downloadUrl, long originalSize,
+                                    long compressedSize, int savingsPercent) {
+    }
 }

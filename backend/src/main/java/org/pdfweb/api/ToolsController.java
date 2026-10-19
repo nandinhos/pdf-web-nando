@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.pdfweb.api.dto.ToolDtos.CompressRequest;
+import org.pdfweb.api.dto.ToolDtos.CompressResponse;
 import org.pdfweb.api.dto.ToolDtos.ContentEditRequest;
 import org.pdfweb.api.dto.ToolDtos.ContentElement;
 import org.pdfweb.api.dto.ToolDtos.EditRequest;
@@ -17,6 +19,7 @@ import org.pdfweb.api.dto.ToolDtos.SplitRequest;
 import org.pdfweb.api.dto.ToolDtos.SplitResponse;
 import org.pdfweb.error.ApiException;
 import org.pdfweb.service.ArtifactStorage;
+import org.pdfweb.service.CompressService;
 import org.pdfweb.service.ContentEditService;
 import org.pdfweb.service.DocumentFontsService;
 import org.pdfweb.service.EditService;
@@ -57,13 +60,15 @@ public class ToolsController {
     private final TextExtractService textExtractService;
     private final LayoutAnalysisService layoutAnalysisService;
     private final DocumentFontsService documentFontsService;
+    private final CompressService compressService;
 
     public ToolsController(FileStorageService files, ArtifactStorage artifacts,
                            SplitService splitService, MergeService mergeService, EditService editService,
                            ContentEditService contentEditService, OcrService ocrService,
                            org.pdfweb.jobs.JobRegistry jobs, TextExtractService textExtractService,
                            LayoutAnalysisService layoutAnalysisService,
-                           DocumentFontsService documentFontsService) {
+                           DocumentFontsService documentFontsService,
+                           CompressService compressService) {
         this.files = files;
         this.artifacts = artifacts;
         this.splitService = splitService;
@@ -75,6 +80,7 @@ public class ToolsController {
         this.textExtractService = textExtractService;
         this.layoutAnalysisService = layoutAnalysisService;
         this.documentFontsService = documentFontsService;
+        this.compressService = compressService;
     }
 
     @PostMapping("/split")
@@ -115,6 +121,15 @@ public class ToolsController {
         Path dest = editService.edit(pdf, ops, req.password());
         String id = artifacts.idOf(dest);
         return new SingleResultResponse(id, "/api/v1/results/" + id);
+    }
+
+    @PostMapping("/compress")
+    public CompressResponse compress(@RequestBody CompressRequest req) throws IOException {
+        Path pdf = files.resolveExisting(req.fileId());
+        CompressService.CompressResult res = compressService.compress(pdf, req.quality(), req.password());
+        String id = artifacts.idOf(res.file());
+        return new CompressResponse(id, "/api/v1/results/" + id, res.originalSize(),
+                res.compressedSize(), res.savingsPercent());
     }
 
     @PostMapping("/content-edit")

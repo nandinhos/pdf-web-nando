@@ -7,51 +7,105 @@ import { Spinner } from "@/components/Spinner";
 import { FilenameField } from "@/components/ExportControls";
 import type { GridPage as GP } from "@/components/PageGrid";
 
-/**
- * Painel "Editar" (Fase 6, item E — separado de Dividir). Exporta o PDF com a
- * ordem e rotações do grid. NÃO edita texto/elementos do conteúdo.
- */
-export function EditPanel({ fileId, pages }: { fileId: string; pages: GP[] }) {
+interface EditPanelProps {
+  fileId: string;
+  pages: GP[];
+  isExtractMode?: boolean;
+}
+
+export function EditPanel({ fileId, pages, isExtractMode = false }: EditPanelProps) {
   const { t } = useI18n();
-  const [filename, setFilename] = useState("documento-editado");
+  const selectedPages = pages.filter((p) => p.selected);
+  const [filename, setFilename] = useState(isExtractMode ? "paginas-extraidas" : "documento-editado");
   const [result, setResult] = useState<SingleResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function runExport() {
+  async function runProcess(onlySelected: boolean) {
     setBusy(true);
     setError(null);
     setResult(null);
+
+    const targetList = onlySelected ? selectedPages : pages;
+    if (targetList.length === 0) {
+      setError(t("extract.emptySelection"));
+      setBusy(false);
+      return;
+    }
+
     try {
-      const order = pages.map((p) => p.origin);
+      const order = targetList.map((p) => p.origin);
       const ops: EditOp[] = [{ type: "reorder", order }];
-      pages.forEach((p, idx) => {
-        if (p.rotation !== 0) ops.push({ type: "rotate", page: idx + 1, rotate: p.rotation });
+      targetList.forEach((p, idx) => {
+        if (p.rotation !== 0) {
+          ops.push({ type: "rotate", page: idx + 1, rotate: p.rotation });
+        }
       });
       setResult(await editFile({ fileId, ops }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Falha ao exportar edição");
+      setError(e instanceof Error ? e.message : "Falha ao processar páginas");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="tools" aria-label={t("tab.edit")}>
+    <section className="tools" aria-label={isExtractMode ? t("tab.extract") : t("tab.edit")}>
       {busy && <Spinner overlay label={t("common.processing")} />}
       <fieldset>
-        <legend>{t("tab.edit")}</legend>
-        <p className="hint">Aplica a ordem e as rotações do grid (não edita conteúdo).</p>
+        <legend>{isExtractMode ? t("tab.extract") : t("tab.edit")}</legend>
 
-        <FilenameField value={filename} onChange={setFilename} placeholder="documento-editado" />
+        <p className="hint">
+          {isExtractMode
+            ? t("extract.panelHint")
+            : t("edit.panelHint")}
+        </p>
 
-        <button type="button" className="btn-primary" onClick={runExport} disabled={busy}>
-          Exportar PDF
-        </button>
+        <FilenameField
+          value={filename}
+          onChange={setFilename}
+          placeholder={isExtractMode ? "paginas-extraidas" : "documento-editado"}
+        />
+
+        {isExtractMode ? (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => runProcess(true)}
+            disabled={busy || selectedPages.length === 0}
+          >
+            {selectedPages.length === 0
+              ? t("extract.selectPagesFirst")
+              : `${t("extract.button")} (${selectedPages.length})`}
+          </button>
+        ) : (
+          <div className="edit-actions-col">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => runProcess(false)}
+              disabled={busy}
+            >
+              {t("edit.exportAll")}
+            </button>
+
+            {selectedPages.length > 0 && (
+              <button
+                type="button"
+                className="btn-secondary btn-extract"
+                onClick={() => runProcess(true)}
+                disabled={busy}
+              >
+                {t("extract.button")} ({selectedPages.length})
+              </button>
+            )}
+          </div>
+        )}
+
         {result && (
-          <p>
-            <a href={withName(result.downloadUrl, filename)} download>
-              Baixar resultado
+          <p className="result-download-wrap">
+            <a href={withName(result.downloadUrl, filename)} download className="btn-primary btn-download">
+              {t("common.download")}
             </a>
           </p>
         )}

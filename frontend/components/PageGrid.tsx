@@ -94,11 +94,46 @@ export function PageGrid({ doc, pages, onChange }: PageGridProps) {
   }
 
   const [previewPage, setPreviewPage] = useState<number | null>(null);
+  const selectedCount = pages.filter((p) => p.selected).length;
+
+  function selectAll() {
+    onChange(pages.map((p) => ({ ...p, selected: true })));
+  }
+
+  function clearSelection() {
+    onChange(pages.map((p) => ({ ...p, selected: false })));
+  }
+
+  function invertSelection() {
+    onChange(pages.map((p) => ({ ...p, selected: !p.selected })));
+  }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={pages.map((p) => p.id)} strategy={rectSortingStrategy}>
-        <ul className="page-grid">
+    <div className="page-grid-container">
+      <div className="page-grid-toolbar" role="toolbar" aria-label="Ações de seleção de páginas">
+        <span className="selection-badge">
+          {selectedCount === 0
+            ? "Nenhuma selecionada"
+            : `${selectedCount} de ${pages.length} selecionada(s)`}
+        </span>
+        <div className="toolbar-actions">
+          <button type="button" className="btn-sm" onClick={selectAll}>
+            Selecionar todas
+          </button>
+          <button type="button" className="btn-sm" onClick={invertSelection}>
+            Inverter
+          </button>
+          {selectedCount > 0 && (
+            <button type="button" className="btn-sm" onClick={clearSelection}>
+              Limpar
+            </button>
+          )}
+        </div>
+      </div>
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={pages.map((p) => p.id)} strategy={rectSortingStrategy}>
+          <ul className="page-grid">
           {pages.map((page) => (
             <SortablePage
               key={page.id}
@@ -116,5 +151,6 @@ export function PageGrid({ doc, pages, onChange }: PageGridProps) {
         <PdfPreviewModal doc={doc} initialPage={previewPage} onClose={() => setPreviewPage(null)} />
       )}
     </DndContext>
+    </div>
   );
 }

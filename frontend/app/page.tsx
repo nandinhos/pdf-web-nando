@@ -11,6 +11,7 @@ import { MergePanel } from "@/components/MergePanel";
 import { ImagesPanel } from "@/components/ImagesPanel";
 import { OcrPanel } from "@/components/OcrPanel";
 import { SignaturePanel } from "@/components/SignaturePanel";
+import { CompressPanel } from "@/components/CompressPanel";
 import { SettingsBar } from "@/components/SettingsBar";
 import { Launcher } from "@/components/Launcher";
 import { ImportModal } from "@/components/ImportModal";
@@ -22,6 +23,8 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 const META: Record<ToolId, { icon: string; titleKey: string }> = {
   edit: { icon: "edit", titleKey: "tab.edit" },
   content: { icon: "content", titleKey: "tab.content" },
+  extract: { icon: "extract", titleKey: "tab.extract" },
+  compress: { icon: "compress", titleKey: "tab.compress" },
   split: { icon: "split", titleKey: "tab.split" },
   merge: { icon: "merge", titleKey: "tab.merge" },
   images: { icon: "images", titleKey: "tab.images" },
@@ -30,7 +33,7 @@ const META: Record<ToolId, { icon: string; titleKey: string }> = {
 };
 
 /** Ferramentas que operam sobre 1 PDF carregado via modal + grid de páginas. */
-const PDF_FIRST: ToolId[] = ["edit", "content", "split"];
+const PDF_FIRST: ToolId[] = ["edit", "content", "split", "extract", "compress"];
 
 export default function HomePage() {
   const { t } = useI18n();
@@ -143,6 +146,24 @@ export default function HomePage() {
                 <PageGrid doc={doc} pages={pages} onChange={setPages} />
               </div>
               <EditPanel fileId={fileId} pages={pages} />
+            </div>
+          )}
+
+          {active === "extract" && doc && fileId && (
+            <div className="workspace">
+              <div className="panel">
+                <PageGrid doc={doc} pages={pages} onChange={setPages} />
+              </div>
+              <EditPanel fileId={fileId} pages={pages} isExtractMode={true} />
+            </div>
+          )}
+
+          {active === "compress" && doc && fileId && (
+            <div className="workspace">
+              <div className="panel">
+                <PageGrid doc={doc} pages={pages} onChange={setPages} />
+              </div>
+              <CompressPanel fileId={fileId} />
             </div>
           )}
 

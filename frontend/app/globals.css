@@ -137,6 +137,8 @@ select:focus-visible, [tabindex]:focus-visible {
 .tool-ic svg { width: 26px; height: 26px; }
 .tool-ic.edit   { background: linear-gradient(135deg, var(--tool-edit-a), var(--tool-edit-b)); }
 .tool-ic.content { background: linear-gradient(135deg, var(--tool-content-a), var(--tool-content-b)); }
+.tool-ic.extract { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.tool-ic.compress { background: linear-gradient(135deg, #10b981, #059669); }
 .tool-ic.split  { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
 .tool-ic.merge  { background: linear-gradient(135deg, var(--tool-merge-a), var(--tool-merge-b)); }
 .tool-ic.images { background: linear-gradient(135deg, var(--tool-images-a), var(--tool-images-b)); }
@@ -732,3 +734,169 @@ select:focus-visible, [tabindex]:focus-visible {
   font: inherit;
 }
 .btn-remove-wide:hover { background: rgba(176,0,32,.08); }
+
+/* ---------- Toolbar de seleção de páginas ---------- */
+.page-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.page-grid-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.selection-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-sm {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.btn-sm:hover {
+  background: var(--border);
+}
+
+/* ---------- Botões e Ações de Edição/Extração ---------- */
+.edit-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.btn-secondary.btn-extract {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+}
+.btn-secondary.btn-extract:hover:not(:disabled) {
+  opacity: .92;
+  transform: translateY(-1px);
+}
+.btn-secondary.btn-extract:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.result-download-wrap {
+  margin-top: 14px;
+}
+
+/* ---------- Painel de Compressão ---------- */
+.compress-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.preset-btn strong {
+  font-size: 14px;
+}
+.preset-btn span {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+.preset-btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+.preset-btn.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 0 0 1px #10b981;
+}
+.compress-result-card {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.compress-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--fg-muted);
+}
+.stat-val {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.stat-val.highlight {
+  color: #10b981;
+}
+.stat-arrow {
+  font-size: 18px;
+  color: var(--fg-muted);
+}
+.stat-badge {
+  background: #10b981;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.compress-download-wrap {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+.btn-download {
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}

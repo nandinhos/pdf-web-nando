@@ -38,4 +38,18 @@ describe("apiClient", () => {
     expect(e.code).toBe("X");
     expect(e.message).toBe("msg");
   });
+
+  it("chama compress e retorna dados de compressão", async () => {
+    mockFetch(200, {
+      resultId: "res-1",
+      downloadUrl: "/api/v1/results/res-1",
+      originalSize: 1000,
+      compressedSize: 400,
+      savingsPercent: 60,
+    });
+    const { compressFile } = await import("./apiClient");
+    const res = await compressFile({ fileId: "doc-1", quality: "medium" });
+    expect(res.savingsPercent).toBe(60);
+    expect(res.downloadUrl).toBe("/api/v1/results/res-1");
+  });
 });

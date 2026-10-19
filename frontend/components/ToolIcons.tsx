@@ -54,6 +54,21 @@ export const ToolIcons: Record<string, ReactNode> = {
       <path d="M14 7l3-3 3 3-3 3z" />
     </svg>
   ),
+  compress: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 14h6m0 0v6m0-6L3 21" />
+      <path d="M20 10h-6m0 0V4m0 6l7-7" />
+      <rect x="9" y="9" width="6" height="6" rx="1" />
+    </svg>
+  ),
+  extract: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+      <path d="M5 12V5a2 2 0 0 1 2-2h7l5 5v4" />
+      <path d="M4 18h16" />
+      <path d="M12 14v8M9 19l3 3 3-3" />
+    </svg>
+  ),
   arrow: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 12h14M13 6l6 6-6 6" />
@@ -67,7 +82,7 @@ export const ToolIcons: Record<string, ReactNode> = {
   ),
 };
 
-export type ToolId = "edit" | "content" | "split" | "merge" | "images" | "ocr" | "sign";
+export type ToolId = "edit" | "content" | "split" | "merge" | "images" | "ocr" | "sign" | "compress" | "extract";
 
 /** Chave do ícone/acento por ferramenta. */
 export const toolIconKey: Record<ToolId, string> = {
@@ -78,4 +93,6 @@ export const toolIconKey: Record<ToolId, string> = {
   images: "images",
   ocr: "ocr",
   sign: "sign",
+  compress: "compress",
+  extract: "extract",
 };
