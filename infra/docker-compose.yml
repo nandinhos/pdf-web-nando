@@ -9,11 +9,14 @@ services:
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-500}
       MAX_PAGES_PER_OP: ${MAX_PAGES_PER_OP:-2000}
       STORAGE_LOCAL_DIR: /tmp/pdfweb
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    depends_on:
-      - redis
-      - minio
+    volumes:
+      # Uploads e artefatos em disco local (v1). Sem volume, um recreate do
+      # container apagaria todos os fileIds/resultIds.
+      - pdfweb-data:/tmp/pdfweb
+    ports:
+      # Publicado para o fluxo "pnpm dev" no host (proxy em next.config.mjs).
+      # No fluxo completo, o acesso continua sendo via nginx (:8090).
+      - "${BACKEND_PORT:-8081}:8081"
     expose:
       - "8081"
 
@@ -29,23 +32,6 @@ services:
     expose:
       - "3000"
 
-  redis:
-    image: redis:7-alpine
-    expose:
-      - "6379"
-
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
-    volumes:
-      - minio-data:/data
-    expose:
-      - "9000"
-      - "9001"
-
   nginx:
     image: nginx:1.27-alpine
     volumes:
@@ -56,5 +42,31 @@ services:
       - backend
       - frontend
 
+  # --- Perfil "full": infra reservada para a v2, NAO usada pelo codigo v1 ---
+  # OBSERVED: nenhuma classe referencia Redis/MinIO/S3. Jobs vivem em memoria
+  # (jobs/JobRegistry) e artefatos em disco local (service/ArtifactStorage).
+  # Subir com: docker compose --profile full up
+  # NOTA: o MinIO deixou de publicar imagem publica (Docker Hub e Quay
+  # retornam denied/401); forneca uma imagem propria via MINIO_IMAGE.
+  redis:
+    profiles: ["full"]
+    image: redis:7-alpine
+    expose:
+      - "6379"
+
+  minio:
+    profiles: ["full"]
+    image: ${MINIO_IMAGE:-quay.io/minio/minio:latest}
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio-data:/data
+    expose:
+      - "9000"
+      - "9001"
+
 volumes:
   minio-data:
+  pdfweb-data:

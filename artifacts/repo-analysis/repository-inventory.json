@@ -1,0 +1,71 @@
+{
+  "repository": "https://github.com/nandinhos/pdf-web-nando",
+  "commit": "b424da7",
+  "analyzedAt": "2026-10-14",
+  "evidenceLegend": "OBSERVED=lido/executado; INFERRED=deduzido de evidencias; UNKNOWN=sem evidencia",
+  "stack": {
+    "backend": {
+      "language": "Java 21",
+      "framework": "Spring Boot 3.3.5 (web, actuator, validation)",
+      "pdf": "Apache PDFBox 3.0.3 + pdfbox-tools",
+      "crypto": "BouncyCastle 1.78.1 (bcpkix/bcprov) - verificacao CMS/PKIX",
+      "imaging": "Apache Commons Imaging 1.0.0-alpha5 (EXIF)",
+      "ocr": "Tesseract via ProcessBuilder (eng+por na imagem Docker)",
+      "build": "Maven wrapper 3.3.4 (only-script), sem Java/Maven no host",
+      "linesOfCode": 3744,
+      "tests": "44 @Test em 12 classes; OBSERVED 44 run, 0 fail, 1 skipped (OCR real sem tesseract na imagem maven)"
+    },
+    "frontend": {
+      "framework": "Next.js 14.2.15 (App Router, output standalone) + React 18.3.1 + TypeScript 5.6.3",
+      "pdf": "pdfjs-dist 4.7.76 (worker copiado p/ public/ via postinstall inspecionado)",
+      "dnd": "@dnd-kit 6.1/8.0",
+      "serverState": "TanStack Query 5.59 (declarado; uso principal via lib/apiClient.ts)",
+      "packageManager": "pnpm 11.2.2 (corepack), Node 22",
+      "linesOfCode": 2423,
+      "tests": "OBSERVED: vitest 3 passed (1 arquivo), tsc --noEmit 0, next lint 0, next build OK (rota / = 212 kB First Load)"
+    },
+    "infra": {
+      "compose": "backend:8081, frontend:3000, nginx:1.27-alpine publica :8090 (HTTP_PORT)",
+      "unusedProvisioned": "OBSERVED: redis/minio sem nenhuma referencia no codigo; movidos p/ profile 'full' nesta sessao",
+      "storageV1": "disco local /tmp/pdfweb (agora volume pdfweb-data)",
+      "jobsV1": "em memoria (ConcurrentHashMap + SseEmitter), instancia unica"
+    },
+    "ci": ".github/workflows/ci.yml: backend mvn test (JDK21), frontend typecheck/lint/test/build, docker build das 2 imagens"
+  },
+  "api": {
+    "prefix": "/api/v1",
+    "endpoints": [
+      "GET /health", "POST /files", "GET /files/{id}/pages",
+      "POST /split", "POST /merge", "POST /edit", "GET /results/{id}",
+      "POST /images", "POST /images/to-pdf", "POST /images/extract",
+      "POST /ocr", "GET /jobs/{id}", "GET /jobs/{id}/events (SSE)", "GET /jobs/{id}/result",
+      "POST /signatures/verify"
+    ],
+    "errorEnvelope": "{ error: { code, message, details } }",
+    "auth": "OBSERVED: inexistente (sem Spring Security, sem CORS)"
+  },
+  "godNodes": [
+    { "name": "core/PageMerger", "role": "motor de composicao de paginas; split, merge e edit montam List<PageItem> e chamam merge(dest)" },
+    { "name": "service/ArtifactStorage + FileStorageService/ImageStorage", "role": "ciclo de vida de fileId/resultId em disco, anti path-traversal" },
+    { "name": "jobs/JobRegistry", "role": "jobs async + fan-out SSE (OCR)" },
+    { "name": "frontend/lib/apiClient.ts", "role": "unico ponto de contato tipado com a API" },
+    { "name": "frontend/app/page.tsx", "role": "shell: Launcher(6 cards) -> ImportModal -> painel da ferramenta" }
+  ],
+  "verification": {
+    "backendTests": "docker run maven:3.9-eclipse-temurin-21 mvn -B test -> BUILD SUCCESS, 44 run / 0 fail / 1 skipped",
+    "frontend": "pnpm install --frozen-lockfile; pnpm test 3/3; typecheck 0; lint 0; build OK",
+    "dockerUp": "docker compose up --build -d -> 3 containers Up; GET :8090/api/v1/health 200 {status:UP}; GET :8090/ 200",
+    "e2e": "upload PDF 3p -> pages -> split(3 arquivos) -> download %PDF- -> merge 2x -> signatures/verify (hasSignatures:false) -> OCR job DONE com TXT 'Pagina 1 pdf-web-nando E2E'; upload nao-PDF -> INVALID_PDF",
+    "devProxy": "next dev :3001 -> GET /api/v1/health {status:UP} via rewrite p/ backend :8081 (provado e encerrado)"
+  },
+  "fixesAppliedThisSession": [
+    "infra/docker-compose.yml: minio/redis -> profile full (imagem minio/minio indisponivel: Hub denied, Quay 401); removido depends_on; volume pdfweb-data; porta backend 8081 p/ dev",
+    "frontend/next.config.mjs: rewrite /api/v1/* -> API_PROXY_TARGET|localhost:8081 (dev sem nginx)",
+    "README.md: fluxo dev local corrigido; contagem de testes 39 -> 44"
+  ],
+  "unknowns": [
+    "Comportamento com PDFs reais grandes/criptografados alem dos fixtures de teste (UNKNOWN)",
+    "TTL/expurgo de artefatos: documentado (ARTIFACT_TTL_MINUTES) mas nenhum @Scheduled encontrado (OBSERVED ausencia)",
+    "Deploy/producao: sem manifests alem do compose local (UNKNOWN)"
+  ]
+}

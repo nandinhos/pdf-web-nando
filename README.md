@@ -107,10 +107,16 @@ Erros seguem o envelope `{ "error": { "code", "message", "details" } }`.
 Backend (dentro de container, sem Java no host):
 
 ```bash
-docker compose -f infra/docker-compose.yml up --build backend redis minio
+docker compose -f infra/docker-compose.yml up --build backend
 ```
 
-Frontend:
+> Redis e MinIO **não são usados pelo código da v1** (jobs em memória,
+> artefatos em disco local com volume `pdfweb-data`). Eles ficam atrás do
+> profile `full` (`--profile full`) como reserva para a v2 — e o MinIO não
+> publica mais imagem pública, então o profile exige `MINIO_IMAGE` própria.
+
+Frontend (o `next.config.mjs` faz proxy de `/api/v1` para o backend em
+`localhost:8081` neste fluxo sem nginx):
 
 ```bash
 cd frontend
@@ -121,7 +127,7 @@ pnpm dev
 ## Testes
 
 ```bash
-# Backend (via container) — 39 testes
+# Backend (via container) — 44 testes (1 skip sem tesseract)
 docker run --rm -v "$PWD/backend":/app -w /app maven:3.9-eclipse-temurin-21 mvn test
 
 # Frontend

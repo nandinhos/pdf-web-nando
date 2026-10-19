@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pdf-web-nando — mini-aula técnica</title>
+<style>
+  :root{--ink:#1d2129;--soft:#454b57;--line:#d9dce2;--accent:#0f766e;--accent-bg:#e9f4f2;--warn:#9a3b12;--warn-bg:#fdf0e7;--code-bg:#14181f;--code:#d7e0ea}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font:16px/1.65 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .wrap{max-width:940px;margin:0 auto;padding:48px 24px 72px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:40px;line-height:1.15;margin:0 0 8px;font-weight:600}
+  h2{font-family:Georgia,serif;font-size:24px;margin:44px 0 10px;font-weight:600}
+  h3{font-size:16px;margin:26px 0 6px}
+  p{margin:8px 0;color:var(--ink)}
+  .lede{font-size:18px;color:var(--soft);max-width:44em}
+  .meta{border-top:3px solid var(--ink);border-bottom:1px solid var(--line);padding:12px 0;margin:22px 0 8px;font-size:13.5px;color:var(--soft);display:flex;flex-wrap:wrap;gap:6px 26px}
+  .meta b{color:var(--ink)}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.88em;background:#eef0f3;padding:1px 5px;border-radius:3px}
+  pre{background:var(--code-bg);color:var(--code);padding:16px 18px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.55}
+  pre code{background:none;padding:0;color:inherit}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14.5px}
+  th{text-align:left;border-bottom:2px solid var(--ink);padding:7px 10px 7px 0}
+  td{border-bottom:1px solid var(--line);padding:7px 10px 7px 0;vertical-align:top}
+  .callout{background:var(--accent-bg);border:1px solid #bcd9d4;padding:14px 18px;border-radius:6px;margin:16px 0}
+  .callout.warn{background:var(--warn-bg);border-color:#eccdb4}
+  .callout p{margin:4px 0}
+  .flow{display:grid;grid-template-columns:1fr 1fr;gap:0 34px}
+  @media(max-width:760px){.flow{grid-template-columns:1fr}h1{font-size:31px}}
+  ol,ul{padding-left:22px}li{margin:5px 0}
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.04em;border:1px solid var(--ink);padding:1px 7px;border-radius:99px;margin-right:5px}
+  .tag.ok{border-color:var(--accent);color:var(--accent)}
+  .foot{margin-top:52px;border-top:1px solid var(--line);padding-top:14px;font-size:13px;color:var(--soft)}
+  figure{margin:18px 0}figcaption{font-size:13px;color:var(--soft);margin-top:6px}
+  a{color:var(--accent)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>pdf-web-nando, por dentro</h1>
+<p class="lede">Uma suite web de manipulação de PDF reconstruída como serviço: o navegador mostra e arrasta páginas com pdf.js, mas quem corta, junta, reconhece texto e confere assinatura é um backend Java enxuto sobre Apache PDFBox. Esta mini-aula reconstrói o modelo mental do sistema a partir do código — não do README.</p>
+
+<div class="meta">
+  <span><b>Repositório</b> github.com/nandinhos/pdf-web-nando</span>
+  <span><b>Commit</b> b424da7</span>
+  <span><b>Modo</b> safe-run (testes + Docker + E2E executados)</span>
+  <span><b>Stack</b> Java 21 · Spring Boot 3.3.5 · PDFBox 3.0.3 · Next.js 14 · pdf.js</span>
+</div>
+
+<h2>1 · O problema que ele resolve</h2>
+<p>Ferramentas de PDF no estilo PDF24 (dividir, mesclar, reordenar, imagem↔PDF, OCR, verificar assinatura) sem instalar nada e sem enviar documentos a terceiros. A origem dos requisitos é incomum e está documentada em <code>docs/PRD.md</code>: engenharia reversa estática do PDF24 Creator, com as funcionalidades <em>reimplementadas</em> sobre bibliotecas próprias — nenhum binário ou código do PDF24 é redistribuído, e o GhostScript (AGPL) ficou deliberadamente de fora.</p>
+
+<h2>2 · Topologia real</h2>
+<figure>
+<svg viewBox="0 0 900 300" width="100%" role="img" aria-label="Diagrama: navegador fala com nginx, que roteia para Next.js e para a API Spring">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#454b57"/></marker></defs>
+  <rect x="10" y="110" width="130" height="70" rx="6" fill="#fff" stroke="#1d2129" stroke-width="1.5"/>
+  <text x="75" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d2129">Navegador</text>
+  <text x="75" y="160" text-anchor="middle" font-size="11.5" fill="#454b57">pdf.js · dnd-kit</text>
+  <rect x="240" y="110" width="120" height="70" rx="6" fill="#e9f4f2" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="300" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d2129">nginx :8090</text>
+  <text x="300" y="160" text-anchor="middle" font-size="11.5" fill="#454b57">única porta pública</text>
+  <rect x="470" y="30" width="180" height="80" rx="6" fill="#fff" stroke="#1d2129" stroke-width="1.5"/>
+  <text x="560" y="58" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d2129">Next.js :3000</text>
+  <text x="560" y="77" text-anchor="middle" font-size="11.5" fill="#454b57">1 rota · Launcher + 6 painéis</text>
+  <text x="560" y="94" text-anchor="middle" font-size="11.5" fill="#454b57">lib/apiClient.ts tipado</text>
+  <rect x="470" y="170" width="180" height="100" rx="6" fill="#fff" stroke="#1d2129" stroke-width="1.5"/>
+  <text x="560" y="198" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d2129">Spring Boot :8081</text>
+  <text x="560" y="217" text-anchor="middle" font-size="11.5" fill="#454b57">api/ · service/ · core/</text>
+  <text x="560" y="234" text-anchor="middle" font-size="11.5" fill="#454b57">jobs/ (SSE) · ocr/</text>
+  <text x="560" y="251" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#0f766e">PageMerger = god-node</text>
+  <rect x="740" y="170" width="150" height="100" rx="6" fill="#fff" stroke="#1d2129" stroke-width="1.5"/>
+  <text x="815" y="198" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d2129">Disco + memória</text>
+  <text x="815" y="217" text-anchor="middle" font-size="11.5" fill="#454b57">/tmp/pdfweb (volume)</text>
+  <text x="815" y="234" text-anchor="middle" font-size="11.5" fill="#454b57">jobs em ConcurrentHashMap</text>
+  <text x="815" y="251" text-anchor="middle" font-size="11.5" fill="#454b57">tesseract (processo)</text>
+  <line x1="140" y1="145" x2="238" y2="145" stroke="#454b57" stroke-width="1.5" marker-end="url(#a)"/>
+  <path d="M360,125 L430,80 L468,75" fill="none" stroke="#454b57" stroke-width="1.5" marker-end="url(#a)"/>
+  <path d="M360,165 L430,215 L468,218" fill="none" stroke="#454b57" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="398" y="92" font-size="11" fill="#454b57">/</text>
+  <text x="392" y="212" font-size="11" fill="#454b57">/api/v1</text>
+  <line x1="650" y1="220" x2="738" y2="220" stroke="#454b57" stroke-width="1.5" marker-end="url(#a)"/>
+</svg>
+<figcaption>Não há banco de dados. Redis e MinIO existem no PRD e no compose, mas nenhuma classe os usa — ficaram atrás do profile <code>full</code> após esta análise.</figcaption>
+</figure>
+
+<div class="callout warn">
+  <p><b>O drift que quebrava tudo:</b> o <code>docker compose up</code> do repositório recém-clonado falhava porque a imagem <code>minio/minio</code> não é mais publicada publicamente (Docker Hub: <em>denied</em>; Quay: <em>401</em>). Como o código nunca usou MinIO nem Redis, a correção foi removê-los do caminho de boot — não trocar a imagem.</p>
+</div>
+
+<h2>3 · Os fluxos que importam</h2>
+<div class="flow">
+<div>
+<h3>Upload → ferramenta → download (síncrono)</h3>
+<ol>
+  <li><code>POST /files</code> valida o tipo real por <em>magic bytes</em> (<code>%PDF-</code>), não pela extensão, grava com UUID e conta as páginas.</li>
+  <li>O frontend renderiza o mesmo arquivo localmente com pdf.js — o servidor não devolve thumbnails.</li>
+  <li>Dividir, mesclar e ordenar convergem para <code>core/PageMerger</code>: cada serviço monta uma lista ordenada de páginas e o motor importa cada uma preservando caixa e rotação.</li>
+  <li>O resultado vira um artefato em disco com <code>downloadUrl</code>; o nome final do arquivo é escolhido pelo usuário e sanitizado no servidor.</li>
+</ol>
+</div>
+<div>
+<h3>OCR (assíncrono, com progresso)</h3>
+<ol>
+  <li><code>POST /ocr</code> cria um job e retorna na hora; o trabalho roda em <code>@Async</code>.</li>
+  <li>Cada página é renderizada em JPEG no DPI do preset de qualidade e entregue ao processo <code>tesseract</code> (argumentos em lista, sem shell, timeout de 5 min).</li>
+  <li>Os PDFs pesquisáveis por página são mesclados; o progresso é empurrado ao navegador por SSE.</li>
+  <li>Saída dupla: PDF pesquisável + TXT. Verificado de verdade nesta sessão — o texto "Pagina 1 pdf-web-nando E2E" voltou no TXT.</li>
+</ol>
+</div>
+</div>
+<p><b>Assinatura</b> é só verificação (não assina): BouncyCastle valida o CMS, a cobertura do ByteRange e a cadeia contra as raízes do sistema. LTV e lista de confiança europeia são v2 declarada — não prometa validade jurídica completa com a v1.</p>
+
+<h2>4 · Provas, não promessas</h2>
+<table>
+<tr><th>Verificação</th><th>Comando</th><th>Resultado observado</th></tr>
+<tr><td>Testes backend</td><td><code>mvn -B test</code> (container Temurin 21)</td><td><span class="tag ok">PASS</span> 44 executados, 0 falhas, 1 skip (OCR real)</td></tr>
+<tr><td>Frontend</td><td><code>pnpm test · typecheck · lint · build</code></td><td><span class="tag ok">PASS</span> 3/3 testes, exit 0 em tudo</td></tr>
+<tr><td>Stack Docker</td><td><code>docker compose up --build -d</code></td><td><span class="tag ok">NO AR</span> health 200 em :8090</td></tr>
+<tr><td>E2E via API</td><td>upload → dividir → baixar → mesclar → verificar → OCR</td><td><span class="tag ok">PASS</span> inclusive rejeição de arquivo falso (<code>INVALID_PDF</code>)</td></tr>
+<tr><td>Dev local</td><td><code>pnpm dev</code> + proxy p/ backend</td><td><span class="tag ok">PASS</span> após a rewrite adicionada ao <code>next.config.mjs</code></td></tr>
+</table>
+
+<h2>5 · Onde mexer com segurança</h2>
+<table>
+<tr><th>Quero…</th><th>Toque em</th></tr>
+<tr><td>Nova operação sobre páginas</td><td>Novo serviço sobre <code>PageMerger</code> → endpoint em <code>ToolsController</code> → função em <code>apiClient.ts</code> → painel em <code>components/</code></td></tr>
+<tr><td>Nova ferramenta na home</td><td><code>Launcher.tsx</code> + <code>ToolIcons.tsx</code> + chaves em <code>i18n.tsx</code> + registro em <code>app/page.tsx</code></td></tr>
+<tr><td>Mudar limites/qualidade</td><td><code>application.yml</code>, <code>PdfWebProperties</code>, <code>QualityPreset</code></td></tr>
+<tr><td>Entender um erro da API</td><td>Envelope único em <code>error/GlobalExceptionHandler</code>; códigos nascem como <code>ApiException</code> nos serviços</td></tr>
+</table>
+
+<h2>6 · Armadilhas conhecidas</h2>
+<ul>
+  <li><b>Sem autenticação nem rate-limit.</b> Ótimo localmente; não exponha o :8090 à internet assim.</li>
+  <li><b>Upload inteiro em memória</b> (<code>file.getBytes()</code>) apesar do limite declarado de 500 MB — arquivos grandes são o primeiro gargalo.</li>
+  <li><b>Nada expira:</b> uploads, artefatos e jobs nunca são apagados (o TTL do <code>.env.example</code> não tem código). Disco e memória crescem com o uso.</li>
+  <li><b>Instância única por desenho:</b> jobs e emissores SSE vivem no processo; escalar horizontalmente exige a v2 (Redis/S3) que hoje é só intenção.</li>
+  <li><b>Mesclar perde bookmarks/links internos</b> e o OCR rasteriza a página (o PDF pesquisável é imagem + texto, não o vetor original).</li>
+</ul>
+
+<div class="callout">
+<p><b>Para rodar:</b></p>
+<pre><code>cp .env.example .env
+docker compose -f infra/docker-compose.yml --env-file .env up --build -d
+# abra http://localhost:8090 no navegador</code></pre>
+<p>O host não precisa de Java: o backend compila e roda em container. Para mexer no frontend com hot-reload, suba só o backend pelo compose e rode <code>pnpm dev</code> em <code>frontend/</code>.</p>
+</div>
+
+<p class="foot">Mini-aula gerada na análise de 2026-10-14 (commit b424da7). Sumário auditável em <code>analysis-summary.md</code> e inventário estruturado em <code>repository-inventory.json</code>, nesta mesma pasta. Correções aplicadas (não commitadas): <code>infra/docker-compose.yml</code>, <code>frontend/next.config.mjs</code>, <code>README.md</code>.</p>
+
+</div>
+</body>
+</html>
