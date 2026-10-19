@@ -41,11 +41,27 @@ class CompressServiceTest {
         Path pdf = tmp.resolve("with-image.pdf");
         Files.write(pdf, PdfFixtures.pdfWithImage(200, 200));
 
-        CompressService.CompressResult res = service.compress(pdf, "low", null);
+        for (String preset : new String[]{"low", "medium", "high"}) {
+            CompressService.CompressResult res = service.compress(pdf, preset, null);
 
-        assertThat(Files.exists(res.file())).isTrue();
-        assertThat(PdfDocuments.pageCount(res.file(), null)).isEqualTo(1);
-        assertThat(res.compressedSize()).isGreaterThan(0);
-        assertThat(res.savingsPercent()).isGreaterThanOrEqualTo(0);
+            assertThat(Files.exists(res.file())).isTrue();
+            assertThat(PdfDocuments.pageCount(res.file(), null)).isEqualTo(1);
+            assertThat(res.compressedSize()).isGreaterThan(0);
+            assertThat(res.compressedSize()).isLessThanOrEqualTo(res.originalSize());
+            assertThat(res.savingsPercent()).isGreaterThanOrEqualTo(0);
+        }
+    }
+
+    @Test
+    void compressNeverIncreasesFileSizeEvenWithAlreadyCompressedPdf(@TempDir Path tmp) throws Exception {
+        Path pdf = tmp.resolve("small.pdf");
+        Files.write(pdf, PdfFixtures.pdfWithImage(100, 100));
+        long originalSize = Files.size(pdf);
+
+        for (String preset : new String[]{"low", "medium", "high"}) {
+            CompressService.CompressResult res = service.compress(pdf, preset, null);
+            assertThat(res.compressedSize()).isLessThanOrEqualTo(originalSize);
+            assertThat(res.savingsPercent()).isGreaterThanOrEqualTo(0);
+        }
     }
 }

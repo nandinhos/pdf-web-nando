@@ -34,10 +34,13 @@ public class GlobalExceptionHandler {
                 .body(envelope("FILE_TOO_LARGE", "Arquivo excede o tamanho máximo permitido", null));
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        log.error("Unhandled exception in API", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(envelope("INTERNAL_ERROR", "Erro interno inesperado", null));
+                .body(envelope("INTERNAL_ERROR", "Erro interno inesperado: " + ex.getMessage(), null));
     }
 
     private Map<String, Object> envelope(String code, String message, Object details) {

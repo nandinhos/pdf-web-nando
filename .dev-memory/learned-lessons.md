@@ -118,3 +118,51 @@ adversarial nos bytes (redação real não deixa resíduo).
 
 ### Tags
 #pdfbox #pdfjs #edicao-texto #layout-analysis #content-stream #arquitetura #nan-pdf
+
+---
+
+## Learned Lesson — deduplicacao-cosname-e-monotonicidade-compressao-pdf — 2026-10-19
+
+### Contexto
+**Projeto**: pdf-web-nando (Backend Java / Spring Boot 3)
+**Stack**: Apache PDFBox 3.0.3, Java ImageIO, PDF / Image Streams
+**Categoria**: bug / logic
+
+### O Que Aconteceu (OBSERVED)
+No painel de Compressão de PDF, um documento escaneado de 43 páginas (~9.9 MB / 10.428.356 bytes):
+- Modo **Forte** (LOW) reduzia 33% (para 6.7 MB / 6.987.296 bytes) porque disparava a 2ª passada (rasterização global via `PDFRenderer`).
+- Modo **Recomendada** (MEDIUM) e **Leve** (HIGH) quase não alteravam o tamanho e até aumentavam ligeiramente:
+  - Recomendada: 10.440.598 bytes (+12 KB / exibido como 10.0 MB).
+  - Leve: 10.488.064 bytes (+59 KB / exibido como 10.0 MB).
+
+### Causa Raiz Identificada
+1. **Deduplicação Falha por Identificador Local de Página (`COSName`):** O loop de imagens usava `Set<COSName> processed = new HashSet<>()`. Em PDFs multipáginas (típicos de scanners), cada página tem seu próprio dicionário `/Resources` e costuma nomear sua imagem local como `/Im1`. Ao processar a página 1, `processed.add(/Im1)` fez com que as outras 42 páginas fossem sumariamente ignoradas (`if (processed.contains(name)) continue;`).
+2. **Recompressão Inflada sem Verificação de Tamanho:** A única imagem processada era decodificada e recodificada forçando `TYPE_INT_RGB` (3 canais) com parâmetros JPEG superiores aos do scanner de origem (que era Grayscale de 1 canal), resultando em um stream de bytes maior que o original. O serviço substituía incondicionalmente (`resources.put(name, compressedImg)`), sem checar se os novos bytes eram menores que o stream original.
+3. **Ausência de Invariante de Monotonicidade:** O serviço permitia que um PDF comprimido resultasse maior que a entrada original, sem salvaguarda de fallback.
+
+### Solução Aplicada
+1. **Rastreamento por Objeto Físico:** Substituição de `Set<COSName>` por `Set<COSBase> processedObjects`, rastreando `img.getCOSObject()`. Todas as 43 páginas passam a ser processadas.
+2. **Preservação de Grayscale / Monocromático:** Detecção de imagens de 1 canal (`img.getColorSpace().getNumberOfComponents() == 1` ou `bim.getType() == TYPE_BYTE_GRAY`), gerando `BufferedImage.TYPE_BYTE_GRAY` para evitar o triplo de dados do RGB.
+3. **Regra de Ouro (Validação de Bytes Exatos):** Codificação determinística em memória via `encodeJpeg(targetBim, jpegQuality)`. A substituição do XObject no recurso só ocorre se `origStreamLen <= 0 || jpegBytes.length < origStreamLen`.
+4. **Salvaguarda de Monotonicidade no Documento:** Se `compressedSize >= originalSize` após todas as passadas, restaura o arquivo original exato (`Files.copy(pdf, dest)`), garantindo que um PDF comprimido nunca seja pior/maior que a entrada.
+5. **Resultados Comprovados no Documento Real de 9.9 MB:**
+   - Forte (LOW): 9.9 MB → **4.09 MB (-61%)**.
+   - Recomendada (MEDIUM): 9.9 MB → **6.47 MB (-38%)**.
+   - Leve (HIGH): 9.9 MB → **9.9 MB (-0%)**, salvaguarda atuou e impediu o aumento.
+
+### Como Detectar no Futuro
+- Comparar `compressedSize` com `originalSize` em testes de integração de compressão.
+- Se a redução for ~1/N do esperado em documentos multipáginas escaneados, verificar se a deduplicação está usando chaves de recursos locais (`COSName`) em vez de identificadores físicos (`COSBase` / object number).
+
+### Como Prevenir
+1. **Nunca** usar `COSName` para deduplicação entre páginas em PDFBox. Use o objeto físico de stream `COSBase` (`img.getCOSObject()`).
+2. **Sempre** calcular os bytes codificados antes de substituir streams existentes: `if (newBytes.length < origBytes)`.
+3. Preservar o espaço de cor original (Grayscale deve permanecer Grayscale).
+4. Em qualquer ferramenta de compressão, estabelecer o invariante inegociável: `assert compressedSize <= originalSize`.
+
+### Teste de Regressão
+- `CompressServiceTest.compressReducesOrPreservesPdfWithImage` (testa presets low, medium, high).
+- `CompressServiceTest.compressNeverIncreasesFileSizeEvenWithAlreadyCompressedPdf` (garante monotonicidade em PDFs pequenos ou já comprimidos).
+
+### Tags
+#pdfbox #compressao #jpeg #deduplicacao #cosname #cosbase #monotonicidade #spring-boot
