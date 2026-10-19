@@ -9,6 +9,7 @@ interface LauncherProps {
 
 const TOOLS: { id: ToolId; icon: string; titleKey: string; descKey: string }[] = [
   { id: "edit", icon: "edit", titleKey: "tab.edit", descKey: "tool.edit.desc" },
+  { id: "content", icon: "content", titleKey: "tab.content", descKey: "tool.content.desc" },
   { id: "split", icon: "split", titleKey: "tab.split", descKey: "tool.split.desc" },
   { id: "merge", icon: "merge", titleKey: "tab.merge", descKey: "tool.merge.desc" },
   { id: "images", icon: "images", titleKey: "tab.images", descKey: "tool.images.desc" },

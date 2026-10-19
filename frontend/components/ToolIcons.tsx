@@ -8,6 +8,12 @@ export const ToolIcons: Record<string, ReactNode> = {
       <path d="M18.5 12.5l3 3-5 5H13v-3.5z" />
     </svg>
   ),
+  content: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  ),
   merge: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="8" height="11" rx="1.5" />
@@ -61,11 +67,12 @@ export const ToolIcons: Record<string, ReactNode> = {
   ),
 };
 
-export type ToolId = "edit" | "split" | "merge" | "images" | "ocr" | "sign";
+export type ToolId = "edit" | "content" | "split" | "merge" | "images" | "ocr" | "sign";
 
 /** Chave do ícone/acento por ferramenta. */
 export const toolIconKey: Record<ToolId, string> = {
   edit: "edit",
+  content: "content",
   split: "split",
   merge: "merge",
   images: "images",
