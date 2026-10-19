@@ -43,6 +43,7 @@ export default function HomePage() {
 
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [fileId, setFileId] = useState<string | null>(null);
+  const [fileMeta, setFileMeta] = useState<{ filename: string; sizeBytes: number } | null>(null);
   const [pages, setPages] = useState<GridPage[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +61,7 @@ export default function HomePage() {
     setLoadingDoc(false);
     setDoc(null);
     setFileId(null);
+    setFileMeta(null);
     setPages([]);
     setError(null);
   }
@@ -72,6 +74,7 @@ export default function HomePage() {
     try {
       const res = await uploadFile(file);
       setFileId(res.fileId);
+      setFileMeta({ filename: file.name, sizeBytes: file.size });
       const data = new Uint8Array(await file.arrayBuffer());
       const loaded = await pdfjs.getDocument({ data }).promise;
       setDoc(loaded);
@@ -163,7 +166,11 @@ export default function HomePage() {
               <div className="panel">
                 <PageGrid doc={doc} pages={pages} onChange={setPages} />
               </div>
-              <CompressPanel fileId={fileId} />
+              <CompressPanel
+                fileId={fileId}
+                originalSize={fileMeta?.sizeBytes}
+                fileName={fileMeta?.filename}
+              />
             </div>
           )}
 

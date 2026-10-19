@@ -8,6 +8,8 @@ import { FilenameField } from "@/components/ExportControls";
 
 interface CompressPanelProps {
   fileId: string;
+  originalSize?: number;
+  fileName?: string;
 }
 
 type QualityLevel = "low" | "medium" | "high";
@@ -20,7 +22,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-export function CompressPanel({ fileId }: CompressPanelProps) {
+export function CompressPanel({ fileId, originalSize, fileName }: CompressPanelProps) {
   const { t } = useI18n();
   const [quality, setQuality] = useState<QualityLevel>("medium");
   const [filename, setFilename] = useState("documento-comprimido");
@@ -42,6 +44,8 @@ export function CompressPanel({ fileId }: CompressPanelProps) {
     }
   }
 
+  const initialSize = originalSize ?? result?.originalSize;
+
   return (
     <section className="tools" aria-label={t("tab.compress")}>
       {busy && <Spinner overlay label={t("common.processing")} />}
@@ -49,6 +53,20 @@ export function CompressPanel({ fileId }: CompressPanelProps) {
       <fieldset>
         <legend>{t("tab.compress")}</legend>
         <p className="hint">{t("compress.hint")}</p>
+
+        {/* Sinalização proeminente do tamanho atual antes de qualquer compressão */}
+        {initialSize !== undefined && initialSize > 0 && (
+          <div className="current-file-badge" role="status" aria-label={t("compress.fileLoaded")}>
+            <div className="badge-meta">
+              <span className="meta-icon" aria-hidden="true">📄</span>
+              <span className="meta-name" title={fileName}>{fileName || "Documento PDF"}</span>
+            </div>
+            <div className="badge-size">
+              <span className="size-label">{t("compress.currentSize")}:</span>
+              <strong className="size-value">{formatBytes(initialSize)}</strong>
+            </div>
+          </div>
+        )}
 
         <div className="compress-presets" role="radiogroup" aria-label={t("compress.level")}>
           <button

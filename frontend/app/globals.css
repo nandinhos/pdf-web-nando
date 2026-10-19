@@ -900,3 +900,53 @@ select:focus-visible, [tabindex]:focus-visible {
   display: inline-block;
   text-align: center;
 }
+
+/* Badge de status do arquivo atual no CompressPanel */
+.current-file-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin: 10px 0 12px;
+}
+.current-file-badge .badge-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.current-file-badge .meta-icon {
+  font-size: 16px;
+  flex: 0 0 auto;
+}
+.current-file-badge .meta-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+.current-file-badge .badge-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  background: var(--surface-hover);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.current-file-badge .size-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+.current-file-badge .size-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg);
+}
