@@ -77,6 +77,8 @@ export interface SplitResponse {
 export interface SingleResult {
   resultId: string;
   downloadUrl: string;
+  /** true quando a fonte original não cobriu o texto e foi substituída por Standard-14. */
+  fontSubstituted?: boolean;
 }
 
 export type SplitMode =
@@ -128,6 +130,162 @@ export async function editFile(req: {
   ops: EditOp[];
 }): Promise<SingleResult> {
   const res = await fetch(`${API_BASE}/edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) return parseError(res);
+  return res.json();
+}
+
+// ----- Edição de conteúdo (overlay: texto/imagem/tarja achatados no PDF) -----
+
+/**
+ * Elemento sobreposto no PDF. Coordenadas em pontos (pt), origem no topo-esquerda
+ * da página (mesma convenção de tela/pdf.js); o backend converte para o espaço
+ * do PDF. Campos usados variam por `type`.
+ */
+export type ContentEditElement =
+  | {
+      type: "text";
+      page: number;
+      x: number;
+      y: number;
+      text: string;
+      font?: string;
+      size?: number;
+      color?: string;
+      /** Recurso de fonte original a reusar na reescrita (de analyze-layout). */
+      fontResource?: string;
+      fontResourcePage?: number;
+    }
+  | {
+      type: "image";
+      page: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      imageId: string;
+    }
+  | {
+      type: "redact";
+      page: number;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      color?: string;
+      /** Redação REAL: destrói o conteúdo sob a região (rasteriza a página). */
+      hard?: boolean;
+    };
+
+export async function contentEdit(req: {
+  fileId: string;
+  elements: ContentEditElement[];
+}): Promise<SingleResult> {
+  const res = await fetch(`${API_BASE}/content-edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) return parseError(res);
+  return res.json();
+}
+
+/**
+ * Variante da edição de conteúdo que, após aplicar a redação real (que já
+ * rasteriza as páginas redigidas), reaplica OCR para devolver um PDF
+ * pesquisável — sem o conteúdo redigido. Retorna um jobId (assíncrono/SSE).
+ */
+export async function contentEditWithOcr(req: {
+  fileId: string;
+  elements: ContentEditElement[];
+  lang?: string;
+  quality?: Quality;
+}): Promise<JobCreated> {
+  const res = await fetch(`${API_BASE}/content-edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...req, ocr: true }),
+  });
+  if (!res.ok) return parseError(res);
+  return res.json();
+}
+
+/**
+ * Extrai o texto existente dentro de uma área retangular (pt, top-left) de uma
+ * página — base da edição assistida: captura o texto para pré-preencher a caixa
+ * de edição antes de redigir e reescrever.
+ */
+export async function extractTextArea(req: {
+  fileId: string;
+  page: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): Promise<{ text: string }> {
+  const res = await fetch(`${API_BASE}/text-area`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) return parseError(res);
+  return res.json();
+}
+
+/** Bloco detectado pela análise de layout (coordenadas pt, top-left). */
+export interface LayoutBlock {
+  kind: "text" | "image";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text: string | null;
+  /** Recurso de fonte original do bloco (para reusar na reescrita). */
+  fontResource?: string | null;
+  /** Família legível da fonte original do bloco (ex. "Times-Bold"). */
+  fontFamily?: string | null;
+  /** Tamanho real da fonte do bloco em pt (de getFontSizeInPt). */
+  fontSize?: number;
+}
+
+/** Fonte embutida/declarada no documento (para o seletor de fonte). */
+export interface DocFontInfo {
+  resource: string;
+  page: number;
+  family: string;
+  bold: boolean;
+  italic: boolean;
+  embedded: boolean;
+}
+
+/** Lista as fontes já embutidas no PDF (reuso sem reembutir). */
+export async function docFonts(req: { fileId: string }): Promise<{ fonts: DocFontInfo[] }> {
+  const res = await fetch(`${API_BASE}/doc-fonts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) return parseError(res);
+  return res.json();
+}
+
+export interface AnalyzeLayoutResult {
+  blocks: LayoutBlock[];
+  scanned: boolean;
+}
+
+/**
+ * Detecta blocos editáveis de uma página (texto por linha + imagens), lidos
+ * estruturalmente do PDF. `scanned=true` sinaliza página escaneada (sem texto).
+ */
+export async function analyzeLayout(req: {
+  fileId: string;
+  page: number;
+}): Promise<AnalyzeLayoutResult> {
+  const res = await fetch(`${API_BASE}/analyze-layout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),

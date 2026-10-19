@@ -24,3 +24,6 @@ frontend/.turbo/
 
 # Docker volumes (local)
 infra/.data/
+
+# Binários/instaladores de referência (não versionar)
+base_app/

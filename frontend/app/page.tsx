@@ -5,6 +5,7 @@ import { pdfjs } from "@/lib/pdfjs";
 import { useI18n } from "@/lib/i18n";
 import { PageGrid, type GridPage } from "@/components/PageGrid";
 import { EditPanel } from "@/components/EditPanel";
+import { ContentEditor } from "@/components/ContentEditor";
 import { SplitPanel } from "@/components/SplitPanel";
 import { MergePanel } from "@/components/MergePanel";
 import { ImagesPanel } from "@/components/ImagesPanel";
@@ -20,6 +21,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 
 const META: Record<ToolId, { icon: string; titleKey: string }> = {
   edit: { icon: "edit", titleKey: "tab.edit" },
+  content: { icon: "content", titleKey: "tab.content" },
   split: { icon: "split", titleKey: "tab.split" },
   merge: { icon: "merge", titleKey: "tab.merge" },
   images: { icon: "images", titleKey: "tab.images" },
@@ -28,7 +30,7 @@ const META: Record<ToolId, { icon: string; titleKey: string }> = {
 };
 
 /** Ferramentas que operam sobre 1 PDF carregado via modal + grid de páginas. */
-const PDF_FIRST: ToolId[] = ["edit", "split"];
+const PDF_FIRST: ToolId[] = ["edit", "content", "split"];
 
 export default function HomePage() {
   const { t } = useI18n();
@@ -152,6 +154,8 @@ export default function HomePage() {
               <SplitPanel fileId={fileId} />
             </div>
           )}
+
+          {active === "content" && doc && fileId && <ContentEditor doc={doc} fileId={fileId} />}
 
           {active === "merge" && <MergePanel />}
           {active === "images" && <ImagesPanel />}
